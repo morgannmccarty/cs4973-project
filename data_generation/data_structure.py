@@ -2,7 +2,7 @@ import abc
 import typing
 import numpy as np
 
-TNode = typing.TypeVar("TNode", bound="Node")
+TNode = typing.TypeVar("TNode", bound = "Node")
 
 class Node(abc.ABC):
     """ Abstract Node class in which to create methods that will be implemented in subclasses.
@@ -95,17 +95,40 @@ class MazeNode():
             self.pos = (x, y)
         self.initialized = True
     
+    def __repr__(self):
+        try:
+            return f"""\
+left: {str(self.left.get_identifier())}, up: {str(self.up.get_identifier())}
+self: {str(self.get_identifier())}
+down: {str(self.down.get_identifier())}, right: {str(self.right.get_identifier())}"""
+        except:
+            return str(self.get_identifier())
+
     def add_left(self, left):
         self.left = left
+        if left.right != self:
+            left.add_right(self)
 
     def add_right(self, right):
         self.right = right
+        if right.left != self:
+            right.add_left(self)
+       
 
     def add_up(self, up):
         self.up = up
+        if up.down != self:
+            up.add_down(self)
+        
 
     def add_down(self, down):
         self.down = down
+        if down.up != self:
+            down.add_up(self)
+        
+    
+    def get_identifier(self):
+        return self.pos
 
     def generate_adj_mat(self):
         return np.zeroes(15)
@@ -126,4 +149,20 @@ if __name__ == "__main__":
     else:
         print("MazeNode initialized with too many arguments")
     
+    node_3 = MazeNode()
+    node_4 = MazeNode()
+    node_5 = MazeNode()
+
+    node_1.add_left(node_2)
+    node_1.add_right(node_3)
+    node_1.add_up(node_4)
+    node_1.add_down(node_5)
+    node_2.initialize()
+    node_3.initialize()
+    node_4.initialize()
+    node_5.initialize()
+    try:
+        assert str(node_1) == "left: (1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
+    except:
+        print("Node string did not convert properly")
     print("Finished data_structure tests.")
