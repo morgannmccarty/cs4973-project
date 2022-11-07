@@ -216,14 +216,10 @@ class Maze():
                 nodes.append(new_node)
                 center_node = new_node
             else:
-                print(c_pos)
-                print(center)
-                print(nodes)
                 center_node = [n for n in nodes if n.get_identifier() == c_pos][0]
 
             for i in range(len(out_poses)):
                 if out_poses[i] != (None, None):
-                    print(out_poses[i])
                     new_node = MazeNode()
                     dirs[i](center_node, new_node)
                     new_node.initialize()
@@ -294,29 +290,18 @@ if __name__ == "__main__":
     node_4.initialize()
     node_5.initialize()
 
-    node_6 = MazeNode()
-    MazeNode.add_left(node_5, node_6)
-    node_6.initialize()
-    print(node_6)
     try:
         assert str(node_1) == "left: (1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
     except:
         print("Node string did not convert properly")
+
+    repr_str = "S(0, 0)|L(-1, 0)|R_|U_|D_\nS(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)\nS(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)\nS(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_\nS(0, -2)|L(-1, -2)|R_|U_|D(0, -3)\nS(0, -3)|L(-1, -3)|R_|U(0, -2)|D_\nS(-1, -3)|L_|R(0, -3)|U_|D_\nS(0, -3)|L(-1, -3)|R(1, -3)|U_|D_\nS(1, -3)|L(0, -3)|R_|U(1, -2)|D_\nS(1, -2)|L_|R_|U_|D(1, -3)"
+
+    maze = Maze.from_represented_str(repr_str)
+
+    try:
+        repr_str == (Maze.from_represented_str(repr_str)).to_represented_str()
+    except:
+        print("Outputted represented string did not match original represented string.")
+
     print("Finished data_structure tests.")
-
-    print(Maze.generate_example(10))
-
-    maze = Maze.from_represented_str("""\
-S(0, 0)|L(-1, 0)|R_|U_|D_
-S(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)
-S(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)
-S(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_
-S(0, -2)|L(-1, -2)|R_|U_|D(0, -3)
-S(0, -3)|L(-1, -3)|R_|U(0, -2)|D_
-S(-1, -3)|L_|R(0, -3)|U_|D_
-S(0, -3)|L(-1, -3)|R(1, -3)|U_|D_
-S(1, -3)|L(0, -3)|R_|U(1, -2)|D_
-S(1, -2)|L_|R_|U_|D(1, -3)\
-""")
-
-    print("\n" + str(maze))
