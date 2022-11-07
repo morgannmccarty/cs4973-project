@@ -60,8 +60,13 @@ class Graph(abc.ABC):
     @abc.abstractmethod
     def to_represented_str(self) -> str:
         return ""
-
+    
+    @abc.abstractstaticmethod
     def generate_example(num_nodes: int) -> TGraph:
+        return None
+
+    @abc.abstractstaticmethod
+    def from_represented_str(str) -> TGraph:
         return None
 
 @Node.register
@@ -187,8 +192,8 @@ class Maze():
     def __repr__(self):
         return self.to_represented_str()
 
+    @staticmethod
     def from_represented_str(str):
-
         def str_to_tuple(str):
             str = str.strip("()")
             try:
@@ -227,6 +232,7 @@ class Maze():
                     
         return Maze(nodes)
 
+    @staticmethod
     def generate_example(num_nodes):
         surrounded_nodes = set()
         nodes = []
@@ -260,9 +266,21 @@ class Maze():
                 nn += 1
         
         return Maze(nodes)
+
+Node.register(MazeNode)
+Graph.register(Maze)
             
 if __name__ == "__main__":
     print("Running data_structure tests...")
+    try:
+        assert isinstance(Maze([]), Graph)
+    except:
+        print("Maze is not a child of Graph.")
+    try:
+        assert isinstance(MazeNode([]), Node)
+    except:
+        print("MazeNode is not a child of Node.")
+
     node_1 = MazeNode((0, 0))
     try:
         assert node_1.initialized
