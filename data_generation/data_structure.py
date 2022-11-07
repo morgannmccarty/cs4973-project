@@ -1,8 +1,14 @@
 import abc
 import typing
 import numpy as np
+import random
 
 TNode = typing.TypeVar("TNode", bound = "Node")
+TGraph = typing.TypeVar("TGraph", bound = "Graph")
+
+def str_to_tuple(str):
+    str = str.strip("()")
+    return tuple(map(int, str.split(", ")))
 
 class Node(abc.ABC):
     """ Abstract Node class in which to create methods that will be implemented in subclasses.
@@ -12,35 +18,55 @@ class Node(abc.ABC):
     def add_left(self, left: TNode) -> None:
         """ Update the node to store a value for the Node to the left.
         """
-        pass
+        return
 
     @abc.abstractmethod   
     def add_right(self, left: TNode) -> None:
         """ Update the node to store a value for the Node to the right.
         """
-        pass
+        return
 
     @abc.abstractmethod
     def add_up(self, left: TNode) -> None:
         """ Update the node to store a value for the Node above.
         """
-        pass
+        return
 
     @abc.abstractmethod
     def add_down(self, left: TNode) -> None:
         """ Update the node to store a value for the Node to the below.
         """
-        pass
+        return
 
     @abc.abstractmethod
     def get_identifier(self) -> typing.Any:
         """ Get and return unique identifier for the graph node.
         """
-        pass
+        return None
 
     @abc.abstractmethod
     def generate_adj_matrix(self) -> np.array:
-        pass
+        return None
+    
+    @abc.abstractmethod
+    def to_represented_str(self) -> str:
+        return ""
+
+class Graph(abc.ABC):
+    @abc.abstractmethod
+    def get_members(self) -> typing.List[TNode]:
+        return None
+    
+    @abc.abstractmethod
+    def add_member(self, member: TNode) -> None:
+        return None
+
+    @abc.abstractmethod
+    def to_represented_str(self) -> str:
+        return ""
+
+    def generate_example(num_nodes: int) -> TGraph:
+        return None
 
 @Node.register
 class MazeNode():
@@ -95,6 +121,13 @@ class MazeNode():
             self.pos = (x, y)
         self.initialized = True
     
+    def to_represented_str(self):
+        return f"""S{self.get_identifier()}\
+ L{"_" if self.left == None else self.left.get_identifier()}\
+ R{"_" if self.right == None else self.right.get_identifier()}\
+ U{"_" if self.up == None else self.up.get_identifier()}\
+ D{"_" if self.down == None else self.down.get_identifier()}"""
+
     def __repr__(self):
         try:
             return f"""\
@@ -114,25 +147,89 @@ down: {str(self.down.get_identifier())}, right: {str(self.right.get_identifier()
         if right.left != self:
             right.add_left(self)
        
-
     def add_up(self, up):
         self.up = up
         if up.down != self:
             up.add_down(self)
         
-
     def add_down(self, down):
         self.down = down
         if down.up != self:
             down.add_up(self)
         
-    
     def get_identifier(self):
         return self.pos
 
     def generate_adj_mat(self):
         return np.zeroes(15)
 
+@Graph.register
+class Maze():
+    def __init__(self, members):
+        self.members = members
+
+    def get_members(self):
+        return self.members
+    
+    def add_member(self, member):
+        self.members.append(member)
+
+    def to_represented_str(self):
+        repr = ""
+        for node in self.members:
+            repr = "".join([repr, node.to_represented_str(), "\n"])
+        return repr
+    
+    def __repr__(self):
+        return self.to_represented_str()
+
+    def from_represented_str(str):
+        snodes = str.split("\n")
+        node_set = set()
+        nodes = []
+        primary_node = snodes[0]
+
+        for snode in snodes:
+            if snode == primary_node:
+                continue
+            else:
+                pass
+        return
+
+    def generate_example(num_nodes):
+        surrounded_nodes = set()
+        nodes = []
+
+        nodes.append(MazeNode((0, 0)))
+
+        nn = 1
+        while nn < num_nodes:
+            node = nodes[nn - 1]
+            while node.get_identifier in surrounded_nodes:
+                node = random.choice(nodes)
+            x, y = node.get_identifier()
+            possible_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+            if all(n in surrounded_nodes for n in possible_nodes):
+                surrounded_nodes.add(node.get_identifier())
+            else:
+                dirs = ["left", "right", "up", "down"]
+                good_nodes = [dirs[possible_nodes.index(n)] for n in possible_nodes if n not in surrounded_nodes]
+                dir = random.choice(good_nodes)
+                new_node = MazeNode()
+                if dir == "left":
+                    node.add_left(new_node)
+                if dir == "right":
+                    node.add_right(new_node)
+                if dir == "up":
+                    node.add_up(new_node)
+                if dir == "down":
+                    node.add_down(new_node)
+                new_node.initialize()
+                nodes.append(new_node)
+                nn += 1
+        
+        return Maze(nodes)
+            
 if __name__ == "__main__":
     print("Running data_structure tests...")
     node_1 = MazeNode((0, 0))
@@ -166,3 +263,5 @@ if __name__ == "__main__":
     except:
         print("Node string did not convert properly")
     print("Finished data_structure tests.")
+
+    print(Maze.generate_example(10000))
