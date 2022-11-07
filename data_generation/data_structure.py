@@ -211,7 +211,7 @@ class Maze():
             if self.members[i] == node_s:
                 distances.append(0)
             else:
-                distances.append(int("inf"))
+                distances.append(float("inf"))
         
         path_not_found = True
 
