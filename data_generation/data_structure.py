@@ -49,6 +49,11 @@ class Node(abc.ABC):
         return ""
 
 class Graph(abc.ABC):
+
+    @abc.abstractmethod
+    def optimal_path(self) -> typing.List[TNode]:
+        return None
+
     @abc.abstractmethod
     def get_members(self) -> typing.List[TNode]:
         return None
@@ -191,6 +196,36 @@ class Maze():
     
     def __repr__(self):
         return self.to_represented_str()
+
+    def optimal_path(self):
+        if len(self.members) <= 2:
+            return self.members
+        node_s = random.choice(self.members)
+        node_t = random.choice(self.members)
+        while node_t == node_s:
+            node_t = random.choice(self.members)
+        
+        unvisited = set(self.members)
+        distances = []
+        for i in len(self.members):
+            if self.members[i] == node_s:
+                distances.append(0)
+            else:
+                distances.append(int("inf"))
+        
+        path_not_found = True
+
+        while path_not_found:
+            cn_index = distances.index(min(distances))
+            current_node = self.members[cn_index]
+            children = [current_node.left, current_node.right, current_node.up, current_node.down]
+            for child in children:
+                if child == None:
+                    continue
+                if child in unvisited:
+                    child_index = self.members.index(child)
+                    distances[child_index] = min(distances[child_index], distances[cn_index] + 1)
+            unvisited.remove(current_node)
 
     @staticmethod
     def from_represented_str(str):
