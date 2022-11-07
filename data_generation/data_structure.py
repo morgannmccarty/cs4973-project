@@ -6,10 +6,6 @@ import random
 TNode = typing.TypeVar("TNode", bound = "Node")
 TGraph = typing.TypeVar("TGraph", bound = "Graph")
 
-def str_to_tuple(str):
-    str = str.strip("()")
-    return tuple(map(int, str.split(", ")))
-
 class Node(abc.ABC):
     """ Abstract Node class in which to create methods that will be implemented in subclasses.
     """
@@ -104,18 +100,26 @@ class MazeNode():
                     except:
                         return
                     else:
+                        # if not self.down.initialized:
+                        #     self.down.initialize()
                         x, y = self.down.get_identifier()
                         y += 1
                         self.pos = (x, y)
                 else:
+                    # if not self.up.initialized:
+                    #     self.up.initialize()
                     x, y = self.up.get_identifier()
                     y -= 1
                     self.pos = (x, y)
             else:
+                # if not self.right.initialized:
+                #     self.right.initialize()
                 x, y = self.right.get_identifier()
                 x -= 1
                 self.pos = (x, y)
         else:
+            # if not self.left.initialized:
+            #     self.left.initialize()
             x, y = self.left.get_identifier()
             x += 1
             self.pos = (x, y)
@@ -123,10 +127,10 @@ class MazeNode():
     
     def to_represented_str(self):
         return f"""S{self.get_identifier()}\
- L{"_" if self.left == None else self.left.get_identifier()}\
- R{"_" if self.right == None else self.right.get_identifier()}\
- U{"_" if self.up == None else self.up.get_identifier()}\
- D{"_" if self.down == None else self.down.get_identifier()}"""
+|L{"_" if self.left == None else self.left.get_identifier()}\
+|R{"_" if self.right == None else self.right.get_identifier()}\
+|U{"_" if self.up == None else self.up.get_identifier()}\
+|D{"_" if self.down == None else self.down.get_identifier()}"""
 
     def __repr__(self):
         try:
@@ -184,17 +188,48 @@ class Maze():
         return self.to_represented_str()
 
     def from_represented_str(str):
+
+        def str_to_tuple(str):
+            str = str.strip("()")
+            try:
+                return tuple(map(int, str.split(", ")))
+            except:
+                return (None, None)
+
         snodes = str.split("\n")
-        node_set = set()
         nodes = []
-        primary_node = snodes[0]
 
         for snode in snodes:
-            if snode == primary_node:
-                continue
+            snode_components = snode.split("|")
+            center = snode_components[0]
+            left = snode_components[1]
+            right = snode_components[2]
+            up = snode_components[3]
+            down = snode_components[4]
+
+            c_pos = str_to_tuple(center[1:])
+            out_poses = [str_to_tuple(left[1:]), str_to_tuple(right[1:]), str_to_tuple(up[1:]), str_to_tuple(down[1:])]
+            dirs = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down]
+            center_node = None
+            if c_pos == (0, 0):
+                new_node = MazeNode(c_pos)
+                nodes.append(new_node)
+                center_node = new_node
             else:
-                pass
-        return
+                print(c_pos)
+                print(center)
+                print(nodes)
+                center_node = [n for n in nodes if n.get_identifier() == c_pos][0]
+
+            for i in range(len(out_poses)):
+                if out_poses[i] != (None, None):
+                    print(out_poses[i])
+                    new_node = MazeNode()
+                    dirs[i](center_node, new_node)
+                    new_node.initialize()
+                    nodes.append(new_node)
+                    
+        return Maze(nodes)
 
     def generate_example(num_nodes):
         surrounded_nodes = set()
@@ -258,10 +293,30 @@ if __name__ == "__main__":
     node_3.initialize()
     node_4.initialize()
     node_5.initialize()
+
+    node_6 = MazeNode()
+    MazeNode.add_left(node_5, node_6)
+    node_6.initialize()
+    print(node_6)
     try:
         assert str(node_1) == "left: (1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
     except:
         print("Node string did not convert properly")
     print("Finished data_structure tests.")
 
-    print(Maze.generate_example(10000))
+    print(Maze.generate_example(10))
+
+    maze = Maze.from_represented_str("""\
+S(0, 0)|L(-1, 0)|R_|U_|D_
+S(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)
+S(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)
+S(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_
+S(0, -2)|L(-1, -2)|R_|U_|D(0, -3)
+S(0, -3)|L(-1, -3)|R_|U(0, -2)|D_
+S(-1, -3)|L_|R(0, -3)|U_|D_
+S(0, -3)|L(-1, -3)|R(1, -3)|U_|D_
+S(1, -3)|L(0, -3)|R_|U(1, -2)|D_
+S(1, -2)|L_|R_|U_|D(1, -3)\
+""")
+
+    print("\n" + str(maze))
