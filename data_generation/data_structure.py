@@ -138,13 +138,14 @@ class MazeNode():
         return hash(self.pos)
 
     def __repr__(self):
-        try:
-            return f"""\
-left: {str(self.left.get_identifier())}, up: {str(self.up.get_identifier())}
-self: {str(self.get_identifier())}
-down: {str(self.down.get_identifier())}, right: {str(self.right.get_identifier())}"""
-        except:
-            return str(self.get_identifier())
+#         try:
+#             return f"""\
+# left: {str(self.left.get_identifier())}, up: {str(self.up.get_identifier())}
+# self: {str(self.get_identifier())}
+# down: {str(self.down.get_identifier())}, right: {str(self.right.get_identifier())}"""
+#         except:
+#             return str(self.get_identifier())
+        return self.to_represented_str()
 
     def add_left(self, left):
         self.left = left
@@ -193,7 +194,7 @@ class Maze():
     def __repr__(self):
         return self.to_represented_str()
 
-    def optimal_path(self):
+    def optimal_path(self, *args):
         if len(self.members) <= 2:
             return self.members
         if self.shortest_path != None:
@@ -202,7 +203,9 @@ class Maze():
         node_t = random.choice(self.members)
         while node_t == node_s:
             node_t = random.choice(self.members)
-        print(self.members)
+        if len(args) != 0:
+            node_s = self.members[args[0]]
+            node_t = self.members[args[1]]
         unvisited = set(self.members)
         distances = []
         for i in range(len(self.members)):
@@ -350,57 +353,57 @@ if __name__ == "__main__":
         assert isinstance(MazeNode([]), Node)
     except:
         print("MazeNode is not a child of Node.")
-
-    node_1 = MazeNode((0, 0))
-    node_2 = MazeNode()
+    nodes = [MazeNode((0, 0)), MazeNode()]
     # Test 3: Node initialization test from given pos
     try:
-        assert node_1.initialized
+        assert nodes[0].initialized
     except:
         print("Node did not initialize from given position.")
     # Test 4: Node not initially initialized test
     try:
-        assert not node_2.initialized
+        assert not nodes[1].initialized
     except:
         print("Node initialized with being initialized")
     #Test 5: Node argument count test
     try:
-        node_3 = MazeNode((0, 0), node_1)
+        node_3 = MazeNode((0, 0), nodes[1])
     except:
         pass
     else:
         print("MazeNode initialized with too many arguments")
     
-    node_3 = MazeNode()
-    node_4 = MazeNode()
-    node_5 = MazeNode()
+    nodes = nodes + [MazeNode(), MazeNode(), MazeNode()]
+    nodes[0].add_left(nodes[1])
+    nodes[0].add_right(nodes[2])
+    nodes[0].add_up(nodes[3])
+    nodes[0].add_down(nodes[4])
 
-    node_1.add_left(node_2)
-    node_1.add_right(node_3)
-    node_1.add_up(node_4)
-    node_1.add_down(node_5)
-    node_2.initialize()
-    node_3.initialize()
-    node_4.initialize()
-    node_5.initialize()
+    for node in nodes:
+        node.initialize()
 
     try:
-        assert str(node_1) == "left: (-1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
+        assert str(nodes[0]) == "S(0, 0)|L(-1, 0)|R(1, 0)|U(0, 1)|D(0, -1)"
+        #OLD: "left: (-1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
     except:
         print("Node string did not convert properly")
 
     repr_str = Maze.generate_example(20).to_represented_str()
-    print(repr_str)
-
-    maze = Maze.from_represented_str(repr_str)
-
-    gen_maze = Maze.generate_example(10)
-    print(gen_maze)
-    print(gen_maze.optimal_path())
+    
 
     try:
         repr_str == (Maze.from_represented_str(repr_str)).to_represented_str()
     except:
         print("Outputted represented string did not match original represented string.")
+    
+    gen_maze = Maze.generate_example(10)
+
+    repr_str_op = "S(0, 0)|L_|R_|U(0, 1)|D_\nS(0, 1)|L_|R(1, 1)|U_|D(0, 0)\nS(1, 1)|L(0, 1)|R_|U(1, 2)|D_\nS(1, 2)|L(0, 2)|R_|U_|D(1, 1)\nS(0, 2)|L(-1, 2)|R(1, 2)|U_|D_\nS(-1, 2)|L_|R(0, 2)|U_|D(-1, 1)\nS(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_\nS(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_\nS(-3, 1)|L(-4, 1)|R(-2, 1)|U_|D_\nS(-4, 1)|L_|R(-3, 1)|U_|D_"
+    opt_path = "[S(0, 2)|L(-1, 2)|R(1, 2)|U_|D_, S(-1, 2)|L_|R(0, 2)|U_|D(-1, 1), S(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_, S(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_]"
+    
+    try:
+        gen_maze = Maze.from_represented_str(repr_str_op)
+        assert opt_path == str(gen_maze.optimal_path(4, 7))
+    except:
+        print("Optimal path determined not optimal path.")
 
     print("Finished data_structure tests.")
