@@ -142,6 +142,12 @@ class MazeNode():
 |U{"_" if self.up == None else self.up.get_identifier()}\
 |D{"_" if self.down == None else self.down.get_identifier()}"""
 
+    def __eq__(self, other):
+        return isinstance(other, MazeNode) and self.pos == other.pos
+
+    def __hash__(self) -> int:
+        return hash(self.pos)
+
     def __repr__(self):
         try:
             return f"""\
@@ -181,6 +187,7 @@ down: {str(self.down.get_identifier())}, right: {str(self.right.get_identifier()
 class Maze():
     def __init__(self, members):
         self.members = members
+        self.shortest_path = None
 
     def get_members(self):
         return self.members
@@ -200,14 +207,16 @@ class Maze():
     def optimal_path(self):
         if len(self.members) <= 2:
             return self.members
+        if self.shortest_path != None:
+            return self.shortest_path
         node_s = random.choice(self.members)
         node_t = random.choice(self.members)
         while node_t == node_s:
             node_t = random.choice(self.members)
-        
+        print(self.members)
         unvisited = set(self.members)
         distances = []
-        for i in len(self.members):
+        for i in range(len(self.members)):
             if self.members[i] == node_s:
                 distances.append(0)
             else:
@@ -216,8 +225,22 @@ class Maze():
         path_not_found = True
 
         while path_not_found:
-            cn_index = distances.index(min(distances))
+            uni_dis = sorted(list(distances))
+            cn_index = -1
+            min_num = 0
+            while cn_index == -1:
+                min_dis = uni_dis[min_num]
+                mindices = [num for num, x in enumerate(distances) if x == min_dis]
+                for mindex in mindices:
+                    if self.members[mindex] in unvisited:
+                        cn_index = mindex
+                        break
+                min_num += 1
             current_node = self.members[cn_index]
+
+            if current_node == node_t:
+                path_not_found = False
+                break
             children = [current_node.left, current_node.right, current_node.up, current_node.down]
             for child in children:
                 if child == None:
@@ -226,6 +249,17 @@ class Maze():
                     child_index = self.members.index(child)
                     distances[child_index] = min(distances[child_index], distances[cn_index] + 1)
             unvisited.remove(current_node)
+        
+        path = [node_t]
+        for _ in range(distances[self.members.index(node_t)]):
+            current_node = path[0]
+            children_nodes = [current_node.left, current_node.right, current_node.up, current_node.down]
+            child_distance = [distances[self.members.index(x)] if x != None else float("inf") for x in children_nodes]
+            next_node = children_nodes[np.argmin(child_distance)]
+            path = [next_node] + path
+
+        self.shortest_path = path
+        return path
 
     @staticmethod
     def from_represented_str(str):
@@ -237,7 +271,9 @@ class Maze():
                 return (None, None)
 
         snodes = str.split("\n")
+        snodes.pop()
         nodes = []
+        taken_pos = set()
 
         for snode in snodes:
             snode_components = snode.split("|")
@@ -251,51 +287,58 @@ class Maze():
             out_poses = [str_to_tuple(left[1:]), str_to_tuple(right[1:]), str_to_tuple(up[1:]), str_to_tuple(down[1:])]
             dirs = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down]
             center_node = None
-            if c_pos == (0, 0):
+            if c_pos == (0, 0) and c_pos not in taken_pos:
                 new_node = MazeNode(c_pos)
                 nodes.append(new_node)
+                taken_pos.add(c_pos)
                 center_node = new_node
             else:
                 center_node = [n for n in nodes if n.get_identifier() == c_pos][0]
 
             for i in range(len(out_poses)):
-                if out_poses[i] != (None, None):
+                if out_poses[i] != (None, None) and out_poses[i] not in taken_pos:
                     new_node = MazeNode()
                     dirs[i](center_node, new_node)
                     new_node.initialize()
                     nodes.append(new_node)
+                    taken_pos.add(out_poses[i])
                     
-        return Maze(nodes)
+        return Maze(nodes)   
 
     @staticmethod
     def generate_example(num_nodes):
         surrounded_nodes = set()
         nodes = []
+        coords = []
 
         nodes.append(MazeNode((0, 0)))
+        coords.append((0, 0))
 
         nn = 1
         while nn < num_nodes:
             node = nodes[nn - 1]
-            while node.get_identifier in surrounded_nodes:
+            while node in surrounded_nodes:
                 node = random.choice(nodes)
-            x, y = node.get_identifier()
-            possible_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-            if all(n in surrounded_nodes for n in possible_nodes):
-                surrounded_nodes.add(node.get_identifier())
+
+            
+            possible_adds = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down]
+            existing_nodes = [node.left, node.right, node.up, node.down]
+            exact_adds = [MazeNode(node.get_identifier() + (-1, 0)), MazeNode(node.get_identifier() + (1, 0)), MazeNode(node.get_identifier() + (0, 1)), MazeNode(node.get_identifier() + (0, -1))]
+
+            for n in nodes:
+                for i in range(len(possible_adds)):
+                    if exact_adds[i] == n:
+                        possible_adds[i](node, n)
+
+            good_adds = [possible_adds[i] for i in range(len(possible_adds)) if existing_nodes[i] == None]
+
+
+            if good_adds == []:
+                surrounded_nodes.add(node)
             else:
-                dirs = ["left", "right", "up", "down"]
-                good_nodes = [dirs[possible_nodes.index(n)] for n in possible_nodes if n not in surrounded_nodes]
-                dir = random.choice(good_nodes)
+                node_add = random.choice(good_adds)
                 new_node = MazeNode()
-                if dir == "left":
-                    node.add_left(new_node)
-                if dir == "right":
-                    node.add_right(new_node)
-                if dir == "up":
-                    node.add_up(new_node)
-                if dir == "down":
-                    node.add_down(new_node)
+                node_add(node, new_node)
                 new_node.initialize()
                 nodes.append(new_node)
                 nn += 1
@@ -348,9 +391,15 @@ if __name__ == "__main__":
     except:
         print("Node string did not convert properly")
 
-    repr_str = "S(0, 0)|L(-1, 0)|R_|U_|D_\nS(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)\nS(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)\nS(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_\nS(0, -2)|L(-1, -2)|R_|U_|D(0, -3)\nS(0, -3)|L(-1, -3)|R_|U(0, -2)|D_\nS(-1, -3)|L_|R(0, -3)|U_|D_\nS(0, -3)|L(-1, -3)|R(1, -3)|U_|D_\nS(1, -3)|L(0, -3)|R_|U(1, -2)|D_\nS(1, -2)|L_|R_|U_|D(1, -3)"
+    # repr_str = "S(0, 0)|L(-1, 0)|R_|U_|D_\nS(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)\nS(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)\nS(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_\nS(0, -2)|L(-1, -2)|R_|U_|D(0, -3)\nS(0, -3)|L(-1, -3)|R_|U(0, -2)|D_\nS(-1, -3)|L_|R(0, -3)|U_|D_\nS(0, -3)|L(-1, -3)|R(1, -3)|U_|D_\nS(1, -3)|L(0, -3)|R_|U(1, -2)|D_\nS(1, -2)|L_|R_|U_|D(1, -3)"
+
+    repr_str = Maze.generate_example(20).to_represented_str()
 
     maze = Maze.from_represented_str(repr_str)
+    # print(maze.optimal_path())
+
+    gen_maze = Maze.generate_example(10)
+    print(gen_maze.optimal_path())
 
     try:
         repr_str == (Maze.from_represented_str(repr_str)).to_represented_str()
