@@ -41,11 +41,15 @@ class Node(abc.ABC):
         return None
 
     @abc.abstractmethod
-    def generate_adj_matrix(self) -> np.array:
+    def generate_adj_matrix(self, distance: int) -> np.array:
+        """ Generated a localized adjacency matrix for up to a distance of "distance" nodes away from self.
+        """
         return None
     
     @abc.abstractmethod
     def to_represented_str(self) -> str:
+        """ Create a representation string that is easy converted back to a node.
+        """
         return ""
 
 class Graph(abc.ABC):
@@ -96,44 +100,29 @@ class MazeNode():
     def initialize(self):
         """ Initialize pos based on connected nodes.
         """
-        try:
-             assert self.left != None
-        except:
-            try: 
-                assert self.right != None
-            except:
-                try:
-                    assert self.up != None
-                except:
-                    try:
-                        assert self.down != None
-                    except:
-                        return
-                    else:
-                        # if not self.down.initialized:
-                        #     self.down.initialize()
-                        x, y = self.down.get_identifier()
-                        y += 1
-                        self.pos = (x, y)
-                else:
-                    # if not self.up.initialized:
-                    #     self.up.initialize()
-                    x, y = self.up.get_identifier()
-                    y -= 1
-                    self.pos = (x, y)
-            else:
-                # if not self.right.initialized:
-                #     self.right.initialize()
-                x, y = self.right.get_identifier()
-                x -= 1
-                self.pos = (x, y)
+        if self.initialized:
+            return
         else:
-            # if not self.left.initialized:
-            #     self.left.initialize()
-            x, y = self.left.get_identifier()
-            x += 1
+            x, y = 0, 0
+            if self.left == None:
+                if self.right == None:
+                    if self.up == None:
+                        if self.down == None:
+                            return
+                        else:
+                            x, y = self.down.get_identifier()
+                            y += 1
+                    else:
+                        x, y = self.up.get_identifier()
+                        y -= 1
+                else:
+                    x, y = self.right.get_identifier()
+                    x -= 1
+            else:
+                x, y = self.left.get_identifier()
+                x += 1
             self.pos = (x, y)
-        self.initialized = True
+            self.initialized = True
     
     def to_represented_str(self):
         return f"""S{self.get_identifier()}\
@@ -350,22 +339,31 @@ Graph.register(Maze)
             
 if __name__ == "__main__":
     print("Running data_structure tests...")
+
+    # Test 1: Make sure Graph is an abstraction of Maze
     try:
         assert isinstance(Maze([]), Graph)
     except:
         print("Maze is not a child of Graph.")
+    # Test 2: Make sure Node is an abstraction of MazeNode
     try:
         assert isinstance(MazeNode([]), Node)
     except:
         print("MazeNode is not a child of Node.")
 
     node_1 = MazeNode((0, 0))
+    node_2 = MazeNode()
+    # Test 3: Node initialization test from given pos
     try:
         assert node_1.initialized
     except:
         print("Node did not initialize from given position.")
-    node_2 = MazeNode()
-    node_2.add_left(node_1)
+    # Test 4: Node not initially initialized test
+    try:
+        assert not node_2.initialized
+    except:
+        print("Node initialized with being initialized")
+    #Test 5: Node argument count test
     try:
         node_3 = MazeNode((0, 0), node_1)
     except:
@@ -387,18 +385,17 @@ if __name__ == "__main__":
     node_5.initialize()
 
     try:
-        assert str(node_1) == "left: (1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
+        assert str(node_1) == "left: (-1, 0), up: (0, 1)\nself: (0, 0)\ndown: (0, -1), right: (1, 0)"
     except:
         print("Node string did not convert properly")
 
-    # repr_str = "S(0, 0)|L(-1, 0)|R_|U_|D_\nS(-1, 0)|L_|R(0, 0)|U_|D(-1, -1)\nS(-1, -1)|L_|R_|U(-1, 0)|D(-1, -2)\nS(-1, -2)|L_|R(0, -2)|U(-1, -1)|D_\nS(0, -2)|L(-1, -2)|R_|U_|D(0, -3)\nS(0, -3)|L(-1, -3)|R_|U(0, -2)|D_\nS(-1, -3)|L_|R(0, -3)|U_|D_\nS(0, -3)|L(-1, -3)|R(1, -3)|U_|D_\nS(1, -3)|L(0, -3)|R_|U(1, -2)|D_\nS(1, -2)|L_|R_|U_|D(1, -3)"
-
     repr_str = Maze.generate_example(20).to_represented_str()
+    print(repr_str)
 
     maze = Maze.from_represented_str(repr_str)
-    # print(maze.optimal_path())
 
     gen_maze = Maze.generate_example(10)
+    print(gen_maze)
     print(gen_maze.optimal_path())
 
     try:
