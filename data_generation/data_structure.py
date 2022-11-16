@@ -51,6 +51,10 @@ class Node(abc.ABC):
         """ Create a representation string that is easy converted back to a node.
         """
         return ""
+    
+    @abc.abstractmethod
+    def get_child_list(self) -> typing.List[TNode]:
+        return
 
 class Graph(abc.ABC):
 
@@ -124,6 +128,9 @@ class MazeNode():
             self.pos = (x, y)
             self.initialized = True
     
+    def get_child_list(self):
+        return [self.left, self.right, self.up, self.down]
+
     def to_represented_str(self):
         return f"""S{self.get_identifier()}\
 |L{"_" if self.left == None else self.left.get_identifier()}\
@@ -149,23 +156,23 @@ class MazeNode():
 
     def add_left(self, left):
         self.left = left
-        if left.right != self:
-            left.add_right(self)
+        # if left.right != self:
+        #     left.add_right(self)
 
     def add_right(self, right):
         self.right = right
-        if right.left != self:
-            right.add_left(self)
+        # if right.left != self:
+        #     right.add_left(self)
        
     def add_up(self, up):
         self.up = up
-        if up.down != self:
-            up.add_down(self)
+        # if up.down != self:
+        #     up.add_down(self)
         
     def add_down(self, down):
         self.down = down
-        if down.up != self:
-            down.add_up(self)
+        # if down.up != self:
+        #     down.add_up(self)
         
     def get_identifier(self):
         return self.pos
@@ -177,7 +184,7 @@ class MazeNode():
 class Maze():
     def __init__(self, members):
         self.members = members
-        self.shortest_path = None
+        self.opt_path = None
 
     def get_members(self):
         return self.members
@@ -197,7 +204,7 @@ class Maze():
     def optimal_path(self, *args):
         if len(self.members) <= 2:
             return self.members
-        if self.shortest_path != None:
+        if self.opt_path != None:
             return self.shortest_path
         node_s = random.choice(self.members)
         node_t = random.choice(self.members)
@@ -249,8 +256,15 @@ class Maze():
             child_distance = [distances[self.members.index(x)] if x != None else float("inf") for x in children_nodes]
             next_node = children_nodes[np.argmin(child_distance)]
             path = [next_node] + path
+        # while node_s not in path:
+        #     current_node = path[0]
+        #     children_nodes = [current_node.left, current_node.right, current_node.up, current_node.down]
+        #     child_distances = [distances[self.members.index(x)] if x is not None else float("inf") for x in children_nodes]
+        #     print(child_distances, children_nodes)
+        #     next_node = children_nodes[np.argmin(child_distances)]
+        #     path = [next_node] + path
 
-        self.shortest_path = path
+        self.opt_path = path
         return path
 
     @staticmethod
@@ -299,55 +313,101 @@ class Maze():
 
     @staticmethod
     def generate_example(num_nodes):
-        surrounded_nodes = set()
+        # surrounded_nodes = set() # set of all nodes which have nodes in each direction LRUD
+        # node_set = ()
+        # nodes = [] # all nodes in added order
+        # coords = [] # the choords of each node in the same index order as "nodes"
+
+        # nodes.append(MazeNode((0, 0))) # add the origin node
+        # coords.append((0, 0)) # add the origin node to the chord list
+
+        # nn = 1 # number of nodes that currently exist
+        # while nn < num_nodes: # we want "num_nodes" so we go from 0 through "num_nodes"
+        #     node = nodes[nn - 1]
+        #     while node in surrounded_nodes: # if the node is in the set of surrounded_nodes then it has nodes on all 4 sides
+        #         node = random.choice(nodes) # change the node to another random node
+
+        #     possible_adds = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down] # methods which can be used to create a new node in each direction
+        #     existing_nodes = [node.left, node.right, node.up, node.down] # the existing nodes for the current node (will be None if those nodes do no exist)
+
+        #     exact_adds = [MazeNode(node.get_identifier() + (-1, 0)), MazeNode(node.get_identifier() + (1, 0)), MazeNode(node.get_identifier() + (0, 1)), MazeNode(node.get_identifier() + (0, -1))] # the possible nodes to add based off of their identifiers
+        #     # loop through the existing nodes
+        #     for n in nodes:
+        #         # look at the possible adds (i.e. the 4 possibilities)
+        #         for i in range(len(possible_adds)):
+        #             # check to see if the any of the possible nodes already exists
+        #             if exact_adds[i] == n:
+        #                 # if the node already exists mark it as an existing node (even if it already is marked)
+        #                 existing_nodes[i] = n 
+                        
+        #     good_adds = [possible_adds[i] for i in range(len(possible_adds)) if existing_nodes[i] == None]
+
+        #     if good_adds == []:
+        #         surrounded_nodes.add(node)
+        #     else:
+        #         node_add = random.choice(good_adds)
+        #         if node_add in node_set:
+        #             continue
+        #         new_node = MazeNode()
+        #         node_add(node, new_node)
+        #         new_node.initialize()
+        #         nodes.append(new_node)
+        #         nn += 1
+        
+        # return Maze(nodes)
+
+
         nodes = []
-        coords = []
-
         nodes.append(MazeNode((0, 0)))
-        coords.append((0, 0))
-
         nn = 1
         while nn < num_nodes:
-            node = nodes[nn - 1]
-            while node in surrounded_nodes:
-                node = random.choice(nodes)
-
+            nodes_set = set(nodes)
+            current_node = nodes[nn - 1]
+            children = current_node.get_child_list()
+            while all(child in nodes_set for child in children):
+                current_node = random.choice(nodes)
+                children = current_node.get_child_list()
+            # next_node = random.choice([child for child in children if child not in nodes_set ])
+            # assert next_node is not None
+            dirs = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down]
+            dirs_opp = [MazeNode.add_right, MazeNode.add_left, MazeNode.add_down, MazeNode.add_up]
+            open_dirs = [dir for num, dir in enumerate(dirs) if children[num] is None]
+            # next_node = MazeNode()
+            # dir_chosen = random.choice(open_dirs)
+            # dirs_opp[dirs.index(dir_chosen)](next_node, current_node)
+            # next_node.initialize()
+            # if next_node in nodes_set:
+            #     continue
+            # else:
+            #     dir_chosen(next_node, current_node)
+            # nodes.append(next_node)
+            # assert next_node not in nodes_set
             
-            possible_adds = [MazeNode.add_left, MazeNode.add_right, MazeNode.add_up, MazeNode.add_down]
-            existing_nodes = [node.left, node.right, node.up, node.down]
-            exact_adds = [MazeNode(node.get_identifier() + (-1, 0)), MazeNode(node.get_identifier() + (1, 0)), MazeNode(node.get_identifier() + (0, 1)), MazeNode(node.get_identifier() + (0, -1))]
+            nn += 1
 
-            for n in nodes:
-                for i in range(len(possible_adds)):
-                    if exact_adds[i] == n:
-                        possible_adds[i](node, n)
-
-            good_adds = [possible_adds[i] for i in range(len(possible_adds)) if existing_nodes[i] == None]
-
-
-            if good_adds == []:
-                surrounded_nodes.add(node)
-            else:
-                node_add = random.choice(good_adds)
-                new_node = MazeNode()
-                node_add(node, new_node)
-                new_node.initialize()
-                nodes.append(new_node)
-                nn += 1
-        
         return Maze(nodes)
 
     def path_description(self):
-        self.opt_path = self.optimal_path()
+        short = 4
+        long = 8
         path_description_simple = []
-        for step in self.opt_path:
-            children = [step.left, step.right, step.up, step.down]
-            dirs = ["left", "right", "up", "down"]
-            path_description_simple += [dirs[children.index(step)]]
+        dirs = ["left", "right", "up", "down"]
+        if not self.opt_path: self.optimal_path()
+        for i in range(len(self.opt_path) - 1 ): # skip last node
+            cur_step = self.opt_path[i]
+            next_step = self.opt_path[i+1]
+            children = [cur_step.left, cur_step.right, cur_step.up, cur_step.down]
+            path_description_simple += [dirs[children.index(next_step)]]
+        dir_count = [0 for _ in dirs]
+        for step in path_description_simple:
+            dir_count[dirs.index(step)] += 1
+        best_dir = np.argmax(dir_count)
+        best_dirs = []
+        print(best_dirs)
         print(path_description_simple)
-        short = np.random.normal(loc=4, scale=1, size=(3, 100))
-        short = [[round(x) for x in out] for out in short]
-        print(short)
+        print(dir_count)
+        # short = np.random.normal(loc=4, scale=1, size=(3, 100))
+        # short = [[round(x) for x in out] for out in short]
 
 Node.register(MazeNode)
 Graph.register(Maze)
@@ -407,7 +467,7 @@ if __name__ == "__main__":
     except:
         print("Outputted represented string did not match original represented string.")
     
-    gen_maze = Maze.generate_example(10)
+    gen_maze = Maze.generate_example(100)
 
     repr_str_op = "S(0, 0)|L_|R_|U(0, 1)|D_\nS(0, 1)|L_|R(1, 1)|U_|D(0, 0)\nS(1, 1)|L(0, 1)|R_|U(1, 2)|D_\nS(1, 2)|L(0, 2)|R_|U_|D(1, 1)\nS(0, 2)|L(-1, 2)|R(1, 2)|U_|D_\nS(-1, 2)|L_|R(0, 2)|U_|D(-1, 1)\nS(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_\nS(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_\nS(-3, 1)|L(-4, 1)|R(-2, 1)|U_|D_\nS(-4, 1)|L_|R(-3, 1)|U_|D_"
     opt_path = "[S(0, 2)|L(-1, 2)|R(1, 2)|U_|D_, S(-1, 2)|L_|R(0, 2)|U_|D(-1, 1), S(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_, S(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_]"
