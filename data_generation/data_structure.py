@@ -337,6 +337,18 @@ class Maze():
         
         return Maze(nodes)
 
+    def path_description(self):
+        self.opt_path = self.optimal_path()
+        path_description_simple = []
+        for step in self.opt_path:
+            children = [step.left, step.right, step.up, step.down]
+            dirs = ["left", "right", "up", "down"]
+            path_description_simple += [dirs[children.index(step)]]
+        print(path_description_simple)
+        short = np.random.normal(loc=4, scale=1, size=(3, 100))
+        short = [[round(x) for x in out] for out in short]
+        print(short)
+
 Node.register(MazeNode)
 Graph.register(Maze)
             
@@ -400,6 +412,8 @@ if __name__ == "__main__":
     repr_str_op = "S(0, 0)|L_|R_|U(0, 1)|D_\nS(0, 1)|L_|R(1, 1)|U_|D(0, 0)\nS(1, 1)|L(0, 1)|R_|U(1, 2)|D_\nS(1, 2)|L(0, 2)|R_|U_|D(1, 1)\nS(0, 2)|L(-1, 2)|R(1, 2)|U_|D_\nS(-1, 2)|L_|R(0, 2)|U_|D(-1, 1)\nS(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_\nS(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_\nS(-3, 1)|L(-4, 1)|R(-2, 1)|U_|D_\nS(-4, 1)|L_|R(-3, 1)|U_|D_"
     opt_path = "[S(0, 2)|L(-1, 2)|R(1, 2)|U_|D_, S(-1, 2)|L_|R(0, 2)|U_|D(-1, 1), S(-1, 1)|L(-2, 1)|R_|U(-1, 2)|D_, S(-2, 1)|L(-3, 1)|R(-1, 1)|U_|D_]"
     
+    gen_maze.path_description()
+
     try:
         gen_maze = Maze.from_represented_str(repr_str_op)
         assert opt_path == str(gen_maze.optimal_path(4, 7))
